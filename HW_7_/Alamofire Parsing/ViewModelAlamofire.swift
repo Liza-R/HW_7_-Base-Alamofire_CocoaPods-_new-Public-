@@ -6,22 +6,19 @@
 //  Copyright © 2021 Lio Rin. All rights reserved.
 //
 
+
 import Foundation
 import UIKit
 import Alamofire
 
 protocol uploadWeatherAlamofire{
     func uploadToday(todayAlam: DaysInfo.All_Day_Info, description: String, image: UIImage)
-    func uploadFiveDays(todayData: String, allData_: [String], massForTable_: [forBaseTableAlam], cod: String, allWeatherInfo_:  [[forBaseTableAlam]])
+    func uploadFiveDays(allData_: [String], cod: String, allWeatherInfo_:  [[forBaseTableAlam]], daysForTable: [String])
 }
 
 class ViewModelAlamofire{
-    
     private var today_Alam: [DaysInfo.All_Day_Info] = [],
-                five_days_Alam: [DaysInfo.All_Five_Days_Info] = [],
-               dayForTable_F: [String] = [],
-               allData_F: [String] = [],
-               massForTable_F: [forBaseTableAlam] = []
+                five_days_Alam: [DaysInfo.All_Five_Days_Info] = []
     
     var weatherDelegateAlam: uploadWeatherAlamofire?
 
@@ -42,7 +39,7 @@ class ViewModelAlamofire{
                         icon_today_Alam = j?.icon
                         descript = j?.description ?? "Not Found"
                      }
-  
+                    
                     let url_icon_Al = url_icon_upload.replacingOccurrences(of: "PICTURENAME", with: "\(icon_today_Alam!)")
 
                     AF.request(URL(string: url_icon_Al)!, method: .get).response{ response in
@@ -59,18 +56,19 @@ class ViewModelAlamofire{
     }
     
     func uploadDays(){
-        
         var temp_: [String] = [],
             descript: [String] = [],
             iconLinkAlam: [String] = [],
             iconsAlam: [UIImage] = [],
             data: [String] = [],
             time: [String] = [],
-            cod: String = ""
+            cod: String = "",
+            
+            dayForTable_F: [String] = [],
+            allData_F: [String] = []
   
         let date = Date(),
         formatter = DateFormatter()
-        
         formatter.dateFormat = "YYYY-MM-dd"
         
         let result_Al = formatter.string(from: date)
@@ -93,38 +91,34 @@ class ViewModelAlamofire{
                         }
                     }
                 }
-                for (i, j) in iconLinkAlam.enumerated(){
+                for (_, j) in iconLinkAlam.enumerated(){
                     let url_icon = url_icon_upload.replacingOccurrences(of: "PICTURENAME", with: "\(j)")
                     AF.request(URL(string: url_icon)!, method: .get).response{ response in
                         switch response.result {
                             case .success(let responseData):
-                                iconsAlam.append(UIImage(data: responseData!, scale:1) ?? .checkmark)
-                                let d: forBaseTableAlam = forBaseTableAlam(temper_Alam: temp_[i], icon_Alam: iconsAlam[i], descript_Alam: descript[i], data_Alam: data[i], time_Alam: time[i])
-                                self.massForTable_F.append(d)
-                                self.allData_F.append(d.data_Alam)
-                                
-                                if i == iconLinkAlam.count - 1{
-                                    
+                                iconsAlam.append(UIImage(data: responseData!, scale: 1) ?? .checkmark)
+                                var moving = false
+                                if iconsAlam.count == temp_.count{
+                                    moving = true
+                                }
+                                if moving == true{
+                                    allData_F = data
                                     var set = Set<String>()
-                                    
-                                    self.dayForTable_F = self.allData_F.filter{ set.insert($0).inserted }
-                                    self.dayForTable_F = self.dayForTable_F.filter { $0 != "Not Found" }
-                                    self.dayForTable_F = self.dayForTable_F.filter { $0 != result_Al }
-                                    
+                                    dayForTable_F = allData_F.filter{ set.insert($0).inserted }
+                                    dayForTable_F = dayForTable_F.filter { $0 != "Not Found" }
+                                    dayForTable_F = dayForTable_F.filter { $0 != result_Al }
                                     var allWeatherInfo_Alam: [[forBaseTableAlam]] = [[]]
-                                    
-                                    for _ in 0...self.dayForTable_F.count - 2{
+                                    for _ in 0...dayForTable_F.count - 2{
                                         allWeatherInfo_Alam.append([])
                                     }
-                                    
-                                    for (y, u) in self.dayForTable_F.enumerated(){
-                                        for (i, j) in self.allData_F.enumerated(){
+                                    for (y, u) in dayForTable_F.enumerated(){
+                                        for (i, j) in allData_F.enumerated(){
                                             if u == j{
-                                                allWeatherInfo_Alam[y].append(self.massForTable_F[i])
+                                                allWeatherInfo_Alam[y].append(forBaseTableAlam(temper_Alam: temp_[i], icon_Alam: iconsAlam[i], descript_Alam: descript[i], data_Alam: data[i], time_Alam: time[i]))
                                             }
                                         }
                                     }
-                                    self.weatherDelegateAlam?.uploadFiveDays(todayData: result_Al, allData_: self.allData_F, massForTable_: self.massForTable_F, cod: cod, allWeatherInfo_: allWeatherInfo_Alam)
+                                    self.weatherDelegateAlam?.uploadFiveDays(allData_: allData_F, cod: cod, allWeatherInfo_: allWeatherInfo_Alam, daysForTable: dayForTable_F)
                                 }
                             case .failure(let error):
                                 print("error--->",error)

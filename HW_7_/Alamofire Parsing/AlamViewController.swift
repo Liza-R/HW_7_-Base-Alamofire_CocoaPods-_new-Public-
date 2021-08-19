@@ -53,17 +53,11 @@ class AlamViewController: UIViewController {
 }
 
 extension AlamViewController: uploadWeatherAlamofire{
-
-    func uploadFiveDays(todayData: String, allData_: [String], massForTable_: [forBaseTableAlam], cod: String, allWeatherInfo_:  [[forBaseTableAlam]]) {
+    func uploadFiveDays(allData_: [String], cod: String, allWeatherInfo_: [[forBaseTableAlam]], daysForTable: [String]) {
         allWeatherInfo_Alam = allWeatherInfo_
         codFiveDays = cod
         allDataAlam = allData_
-        massForTableAlam = massForTable_
-        
-        var set = Set<String>()
-        dayForTableAlam = allDataAlam.filter{ set.insert($0).inserted }
-        dayForTableAlam = dayForTableAlam.filter { $0 != "Not Found" }
-        dayForTableAlam = dayForTableAlam.filter { $0 != todayData }
+        dayForTableAlam = daysForTable
         weather_Table_Alamofire.reloadData()
     }
     
